@@ -8,3 +8,6 @@ If you would, you coud change the port and other server attributes within the *.
 
 ## Server resources
 Resources that Genie expose are defined in the *routes.jl* file.
+
+## Additional file
+You can add custom code within the *lib* folder, so they will be automatically loaded by Genie on startup. Genie infact includes the files placed within the *lib* folder and subfolders recursively.
