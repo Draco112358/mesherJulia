@@ -1,6 +1,6 @@
 ## Start the server
 In order to start the Genie server, follow these istructions:
-- create a .env file with a constant named "JULIA_PATH" containing the absolute path to your Julia executable.
+- Within the *mesher* folder create a .env file with a constant named "JULIA_PATH" containing the absolute path to your Julia executable.
 - run the script ./bin/server
 
 Genie will be started in dev mode, listening on port 8001. 
