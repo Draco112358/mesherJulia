@@ -152,7 +152,7 @@ function doMeshing(edictData::Dict)
             
 
     
-    n_materials = len(dictData["STLList"])
+    n_materials = length(dictData["STLList"])
     
     mesher_output = np.full((n_materials,n_of_cells_x, n_of_cells_y, n_of_cells_z), False, dtype=bool)
 
