@@ -1,24 +1,29 @@
 include("voxelizator.jl")
 include("voxelize_internal.jl")
-using FiniteMesh
+using MeshIO
+using FileIO
+using Meshes
+using MeshBridge
 
 function find_mins_maxs(mesh_object::Mesh)
-    @assert mesh_object isa Mesh
-    minx = mesh_object.x.min()
-    maxx = mesh_object.x.max()
-    miny = mesh_object.y.min()
-    maxy = mesh_object.y.max()
-    minz = mesh_object.z.min()
-    maxz = mesh_object.z.max()
+    bb = boundingbox(mesh_object)
+    #@assert mesh_object isa Mesh
+    minx =  coordinates(minimum(bb))[1]
+    maxx = coordinates(maximum(bb))[1]
+    miny = coordinates(minimum(bb))[2]
+    maxy = coordinates(maximum(bb))[2]
+    minz = coordinates(minimum(bb))[3]
+    maxz = coordinates(maximum(bb))[3]
     return minx, maxx, miny, maxy, minz, maxz
 end
 
 
 function find_box_dimensions(dict_meshes::Dict)
-    global_min_x, global_min_y, global_min_z = sys.maxsize, sys.maxsize, sys.maxsize
-    global_max_x, global_max_y, global_max_z = -sys.maxsize, -sys.maxsize, -sys.maxsize
+    global_min_x, global_min_y, global_min_z = prevfloat(typemax(Float64)), prevfloat(typemax(Float64)), prevfloat(typemax(Float64))
+    global_max_x, global_max_y, global_max_z = -prevfloat(typemax(Float64)), -prevfloat(typemax(Float64)), -prevfloat(typemax(Float64))
 
     for (key,value) in dict_meshes
+        #println(dict_meshes)
         minx, maxx, miny, maxy, minz, maxz = find_mins_maxs(value)
         global_min_x = min(global_min_x, minx)
         global_min_y = min(global_min_y, miny)
@@ -88,34 +93,40 @@ function dump_json_data(filename,n_materials,o_x::Float64,o_y::Float64,o_z::Floa
         
     mesher_matrices_dict = Dict()
     
-    count = 0
+    count = 1
     
     for matrix in matr.tolist()
         @assert count in id_to_material 
         mesher_matrices_dict[id_to_material[count]] = matrix
         count += 1
     end
-    @assert count == n_materials
+    @assert count == n_materials+1
     json_dict = Dict("n_materials" => n_materials,"materials" => materials, "origin" => origin , "cell_size" => cell_size, "n_cells" => n_cells, "mesher_matrices" => mesher_matrices_dict)
     return json_dict
 end
 
         
-function doMeshing(edictData::Dict)
+function doMeshing(dictData::Dict)
 
     meshes = Dict()
     for geometry in Array{Any}(dictData["STLList"])
-        @assert geometry isa Dict
+        #@assert geometry isa Dict
         mesh_id = geometry["material"]
         mesh_stl = geometry["STL"]
-        @assert mesh_id not in meshes
-        open("/tmp/stl.temp", "w") do write_file
-            write_file.write(mesh_stl)
+        #@assert mesh_id not in meshes
+        open("/tmp/stl.stl", "w") do write_file
+            write(write_file,mesh_stl)
         end
-        mesh_stl_converted = Mesh("/tmp/stl.temp")
-        @assert mesh_stl_converted isa Mesh
+        mesh_stl = load("/tmp/stl.stl")
+        mesh_stl_converted = convert(Meshes.Mesh, mesh_stl)
+        bb = boundingbox(mesh_stl_converted)
+        println(coordinates(minimum(bb)))
+        println(coordinates(maximum(bb)))
+    
+        #mesh_stl_converted = Meshes.Polytope(3,3,mesh_stl)
+        #@assert mesh_stl_converted isa Mesh
         meshes[mesh_id] = mesh_stl_converted
-        Base.Filesystem.rm("/tmp/stl.temp", force=true)
+        Base.Filesystem.rm("/tmp/stl.stl", force=true)
     end
 
     
@@ -134,9 +145,9 @@ function doMeshing(edictData::Dict)
 
     #print("QUANTA:",quantum_x, quantum_y, quantum_z)
 
-    n_of_cells_x = ceil(geometry_x_bound / quantum_x)
-    n_of_cells_y = ceil(geometry_y_bound / quantum_y)
-    n_of_cells_z = ceil(geometry_z_bound / quantum_z)
+    n_of_cells_x = ceil(Int64, geometry_x_bound / quantum_x)
+    n_of_cells_y = ceil(Int64, geometry_y_bound / quantum_y)
+    n_of_cells_z = ceil(Int64, geometry_z_bound / quantum_z)
     
     #print("GRID:",n_of_cells_x, n_of_cells_y, n_of_cells_z)
     
@@ -158,19 +169,23 @@ function doMeshing(edictData::Dict)
 
     mapping_ids_to_materials = Dict()
 
-    counter_stl_files = 0
+    counter_stl_files = 1
     for mesh_id in meshes
         
-        @assert meshes[mesh_id] isa Mesh
+        #@assert meshes[mesh_id] isa Mesh
         #print("voxeling",mesh_id)
 
-        mesher_output[counter_stl_files,:,:,:] = voxelize(n_of_cells_x, n_of_cells_y, n_of_cells_z, meshes[mesh_id], geometry_data_object)
+        println(mesh_id.first)
+
+
+
+        mesher_output[counter_stl_files,:,:,:] = voxelize(n_of_cells_x, n_of_cells_y, n_of_cells_z, meshes[mesh_id.first], geometry_data_object)
 
         mapping_ids_to_materials[counter_stl_files]=mesh_id
         counter_stl_files+=1
     end
 
-    id_mats_keep=zeros(Inf64, n_materials)
+    id_mats_keep=zeros(Int64, n_materials)
     
     id_mats_keep[1]=0
     
@@ -185,12 +200,12 @@ function doMeshing(edictData::Dict)
 
 
     # assert(isinstance(mesher_output, np.ndarray))
-    @assert cell_size_x isa Float64
-    @assert cell_size_y isa Float64
-    @assert cell_size_z isa Float64
-    @assert origin_x isa Float64
-    @assert origin_y isa Float64
-    @assert origin_z isa Float64
+    # @assert cell_size_x isa Float64
+    # @assert cell_size_y isa Float64
+    # @assert cell_size_z isa Float64
+    # @assert origin_x isa Float64
+    # @assert origin_y isa Float64
+    # @assert origin_z isa Float64
 
     # Writing to data.json
     json_file = "outputMesher.json"

@@ -243,7 +243,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
     gridOUTPUT = fill(false,(voxcountX,voxcountY,voxcountZ))
 
     Nnodes=size(v0_in)[1]
-    #assert case_perm in [0,1,2]
+    #@assert case_perm in [0,1,2]
     if case_perm==0
         meshXmin = input_desc["meshYmin"]
         meshXmax = input_desc["meshYmax"]
@@ -285,7 +285,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
         v1[:, 3] = v1_in[:, 1]
         v2[:, 3] = v2_in[:, 1]
     else
-        #assert case_perm==2
+        #@assert case_perm==2
         meshXmin = input_desc["meshXmin"]
         meshXmax = input_desc["meshXmax"]
         meshYmin = input_desc["meshYmin"]
@@ -415,11 +415,11 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                                     if p_in!=0
                                         minco,maxc0=find_min_max([coN[:,3], size(coN)[1]])
                                         if maxc0<0 || minco>0
-                                            facetCROSSLIST    = hcat((facetCROSSLIST, vertexCROSSLIST[vertexindex]))
+                                            facetCROSSLIST    = [facetCROSSLIST ; vertexCROSSLIST[vertexindex]]
                                         end
                                     else
                                         possibleCROSSLIST = zeros(Int64,0)
-                                        correctionLIST    = vcat((correctionLIST, hcat((loopX, loopY))))
+                                        correctionLIST    = vcat((correctionLIST, [loopX ; loopY]))
                                         checkindex = ones(Int64,length(vertexCROSSLIST))
                                     end
                                 end
@@ -456,7 +456,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                                         if (Y3predicted > v2[loopCHECKFACET,2] && YRpredicted > grid_y[loopY]) || (Y3predicted < v2[loopCHECKFACET,2] && YRpredicted < grid_y[loopY])
                                             # The ray is on the same side of the 1-2 edge as the 3rd vertex.
                                             #The ray passes through the facet since it is on the correct side of all 3 edges
-                                            facetCROSSLIST = hcat((facetCROSSLIST, loopCHECKFACET))
+                                            facetCROSSLIST = [facetCROSSLIST ; loopCHECKFACET]
                                         end
                                     end
                                 end
@@ -516,7 +516,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                             end
                         else
                             if length(grid_zCROSS)>0  # Remaining rays which meet the mesh in some way are not voxelised, but are labelled for correction later.
-                                correctionLIST=vcat((correctionLIST, hcat((loopX, loopY))))
+                                correctionLIST=vcat((correctionLIST, [loopX ; loopY]))
                             end
                         end
                     end
@@ -539,8 +539,8 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
         # array.  This prevents an error if the code tries to interpolate a ray at
         # the edge of the x,y grid.
         if min(correctionLIST[:,1])==0 || max(correctionLIST[:,1])==(length(grid_x)-1) || min(correctionLIST[:,2])==0 || max(correctionLIST[:,2])==(len(grid_y)-1)
-            temp = hcat((fill(false, (voxcountX, 1, voxcountZ))),gridOUTPUT)
-            temp = hcat((temp, fill(false,(voxcountX, 1, voxcountZ))))
+            temp = [(fill(false, (voxcountX, 1, voxcountZ))) ; gridOUTPUT]
+            temp = [temp ; fill(false,(voxcountX, 1, voxcountZ))]
             temp = vcat((fill(false, (1, voxcountY+2, voxcountZ)),temp))
             gridOUTPUT = vcat((temp, fill(false,(1, voxcountY+2, voxcountZ))))
             correctionLIST = correctionLIST + ones(Int64,countCORRECTIONLIST,2)
