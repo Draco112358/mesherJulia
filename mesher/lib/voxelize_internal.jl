@@ -14,8 +14,8 @@ function find_pos_min(vect,N)
 end
 
 function find_min_max(vect)
-    min_value=min(vect)
-    max_value=max(vect)
+    min_value=minimum(vect)
+    max_value=maximum(vect)
     return min_value,max_value
 end
 
@@ -37,7 +37,7 @@ end
 
 function find_pos_min_max_indices_conditioned(V_min,V_max,dimension,leq,geq)
     N=size(V_min)[1]
-    ind=zeros(Int64, N)
+    ind=ones(Int64, N)
     pos=0
     for i in range(1,N)
         if (V_min[i,dimension]<=leq && V_max[i,dimension]>=geq)
@@ -47,17 +47,17 @@ function find_pos_min_max_indices_conditioned(V_min,V_max,dimension,leq,geq)
     end
 
     if pos>=1
-        ind=ind[1:pos+1]
+        ind=ind[1:pos]
     else
-        ind = zeros(Int64,1)
-        #ind[1] = 0
+        ind = ones(Int64,1)
+        ind[1] = 0
     end
     return ind
 end
 
 function find_pos_min_max_indices_conditioned_and_indicized(V_min,V_max,indices,dimension,leq,geq)
     N=length(indices)
-    ind=zeros(Int64,N)
+    ind=ones(Int64,N)
     pos=0
     for i in range(1,N)
         if (V_min[indices[i],dimension]<=leq) && (V_max[indices[i],dimension]>=geq)
@@ -66,10 +66,10 @@ function find_pos_min_max_indices_conditioned_and_indicized(V_min,V_max,indices,
         end
     end
     if pos >= 1
-        ind=ind[1:pos+1]
+        ind=ind[1:pos]
     else
-        ind = zeros(Int64,1)
-        #ind[1] = 0
+        ind = ones(Int64,1)
+        ind[1] = 0
     end
 
     return ind
@@ -77,7 +77,7 @@ end
 
 function find_ind_cross_list(v0,v1,v2,possibleCROSSLIST,gridCOxl,gridCOyl)
     N = length(possibleCROSSLIST)
-    ind = zeros(Int64,N)
+    ind = ones(Int64,N)
     pos = 0
     for i in range(1,N)
         if (v0[possibleCROSSLIST[i],1]==gridCOxl && v1[possibleCROSSLIST[i],1]==gridCOyl) || (v0[possibleCROSSLIST[i], 2] == gridCOxl && v1[possibleCROSSLIST[i], 2] == gridCOyl) || (v0[possibleCROSSLIST[i], 3] == gridCOxl && v1[possibleCROSSLIST[i], 3] == gridCOyl)
@@ -87,10 +87,10 @@ function find_ind_cross_list(v0,v1,v2,possibleCROSSLIST,gridCOxl,gridCOyl)
     end
 
     if pos >= 1
-        ind=ind[1:pos+1]
+        ind=ind[1:pos]
     else
-        ind = zeros(Int64,1)
-        #ind[1] = 0
+        ind = ones(Int64,1)
+        ind[1] = 0
     end
     return ind
 end
@@ -109,7 +109,7 @@ end
 
 function find_ind_to_keep_gridC0z(gridCOzCROSS,meshZmin,meshZmax)
     N=length(gridCOzCROSS)
-    ind=zeros(Int64,N)
+    ind=ones(Int64,N)
     pos=0
     for i in range(1,N)
         if ((gridCOzCROSS[i]>=meshZmin-1e-12) && (gridCOzCROSS[i]<=meshZmax+1e-12))
@@ -119,10 +119,10 @@ function find_ind_to_keep_gridC0z(gridCOzCROSS,meshZmin,meshZmax)
     end
 
     if pos >= 1
-        ind=ind[1:pos+1]
+        ind=ind[1:pos]
     else
-        ind = zeros(Int64,1)
-        #ind[0] = -1
+        ind = ones(Int64,1)
+        ind[1] = 0
     end
 
     return ind
@@ -130,7 +130,7 @@ end
 
 function find_ind_voxel_inside(V,val1,val2)
     N=length(V)
-    ind=zeros(Int64,N)
+    ind=ones(Int64,N)
     pos=0
     for i in range(1,N)
         if (V[i]>val1 && V[i]<val2)
@@ -141,8 +141,8 @@ function find_ind_voxel_inside(V,val1,val2)
     if pos >= 1
         ind=ind[0:pos+1]
     else
-        ind = zeros(Int64,1)
-        #ind[1] = 0
+        ind = ones(Int64,1)
+        ind[1] = 0
     end
 
     return ind
@@ -150,7 +150,7 @@ end
 
 function find_all_equal_on_second_dimension(Mat2D,dimension,val)
     N=size(Mat2D)[1]
-    ind = zeros(Int64,N)
+    ind = ones(Int64,N)
     pos = 0
     for i in range(1,N)
         if (val==Mat2D[i,dimension])
@@ -158,10 +158,10 @@ function find_all_equal_on_second_dimension(Mat2D,dimension,val)
             ind[pos] = i
         end
         if pos >= 1
-            ind = ind[1:pos + 1]
+            ind = ind[1:pos]
         else
-            ind = zeros(Int64,1)
-            #ind[1] = 0
+            ind = ones(Int64,1)
+            ind[1] = 0
         end
     end
 
@@ -170,9 +170,9 @@ end
 
 function CONVERT_meshformat(v0,v1,v2)
 
-    vertices=vcat((v0, v1))
-    vertices = vcat((vertices, v2))
-    vertices = unique(vertices)
+    vertices=vcat(v0, v1)
+    vertices = vcat(vertices, v2)
+    vertices = unique(vertices, dims=3)
 
     faces = zeros(size(v0)[1], 3)
 
@@ -350,7 +350,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
     # % Loop through each x,y pixel.
     # % The mesh will be voxelised by passing rays in the z-direction through
     # % each x,y pixel, and finding the locations where the rays cross the mesh.
-    for loopY in range(meshYminp,meshYmaxp+1)
+    for loopY in range(meshYminp+1,meshYmaxp)
 
         #   % - 1a - Find which mesh facets could possibly be crossed by the ray:
         ind_pcc = find_pos_min_max_indices_conditioned(meshXYZmin, meshXYZmax, 1, grid_y[loopY], grid_y[loopY] )
@@ -358,7 +358,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
         if ind_pcc[1] != 0
             possibleCROSSLISTy = ind_pcc
 
-            for loopX in range(meshXminp,meshXmaxp+1)
+            for loopX in range(meshXminp+1,meshXmaxp)
                 #     % - 1b - Find which mesh facets could possibly be crossed by the ray:
                 ind_pos=find_pos_min_max_indices_conditioned_and_indicized(meshXYZmin, meshXYZmax,possibleCROSSLISTy ,1, grid_x[loopX], grid_x[loopX])
 
@@ -419,7 +419,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                                         end
                                     else
                                         possibleCROSSLIST = zeros(Int64,0)
-                                        correctionLIST    = vcat((correctionLIST, [loopX ; loopY]))
+                                        correctionLIST    = vcat(correctionLIST, [loopX ; loopY])
                                         checkindex = ones(Int64,length(vertexCROSSLIST))
                                     end
                                 end
@@ -485,9 +485,9 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                         # 2. For the x and y coordinates of the ray, solve these equations to find the z coordinate in this plane.
 
                         planecoA = v0[loopFINDZ,2]*(v1[loopFINDZ,3]-v2[loopFINDZ,3]) + v1[loopFINDZ,2]*(v2[loopFINDZ,3]-v0[loopFINDZ,2]) + v2[loopFINDZ,1]*(v0[loopFINDZ,2]-v1[loopFINDZ,2])
-                        planecoB = v0[loopFINDZ,3]*(v1[loopFINDZ,1]-v2[loopFINDZ,1]) + v1[loopFINDZ,3]*(v2[loopFINDZ,1]-v0[loopFINDZ,0]) + v2[loopFINDZ,2]*(v0[loopFINDZ,0]-v1[loopFINDZ,0])
-                        planecoC = v0[loopFINDZ,1]*(v1[loopFINDZ,2]-v2[loopFINDZ,2]) + v1[loopFINDZ,1]*(v2[loopFINDZ,2]-v0[loopFINDZ,1]) + v2[loopFINDZ,0]*(v0[loopFINDZ,1]-v1[loopFINDZ,1])
-                        planecoD = - v0[loopFINDZ,1]*(v1[loopFINDZ,2]*v2[loopFINDZ,3]-v2[loopFINDZ,2]*v1[loopFINDZ,3]) - v1[loopFINDZ,0]*(v2[loopFINDZ,1]*v0[loopFINDZ,2]-v0[loopFINDZ,1]*v2[loopFINDZ,2]) - v2[loopFINDZ,1]*(v0[loopFINDZ,2]*v1[loopFINDZ,3]-v1[loopFINDZ,2]*v0[loopFINDZ,3])
+                        planecoB = v0[loopFINDZ,3]*(v1[loopFINDZ,1]-v2[loopFINDZ,1]) + v1[loopFINDZ,3]*(v2[loopFINDZ,1]-v0[loopFINDZ,1]) + v2[loopFINDZ,2]*(v0[loopFINDZ,1]-v1[loopFINDZ,1])
+                        planecoC = v0[loopFINDZ,1]*(v1[loopFINDZ,2]-v2[loopFINDZ,2]) + v1[loopFINDZ,1]*(v2[loopFINDZ,2]-v0[loopFINDZ,1]) + v2[loopFINDZ,1]*(v0[loopFINDZ,1]-v1[loopFINDZ,1])
+                        planecoD = - v0[loopFINDZ,1]*(v1[loopFINDZ,2]*v2[loopFINDZ,3]-v2[loopFINDZ,2]*v1[loopFINDZ,3]) - v1[loopFINDZ,1]*(v2[loopFINDZ,1]*v0[loopFINDZ,2]-v0[loopFINDZ,1]*v2[loopFINDZ,2]) - v2[loopFINDZ,1]*(v0[loopFINDZ,2]*v1[loopFINDZ,3]-v1[loopFINDZ,2]*v0[loopFINDZ,3])
 
                         if abs(planecoC) < 1e-14
                             planecoC=0.0
@@ -501,7 +501,7 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                         grid_zCROSS=grid_zCROSS[ind_pos_keep]
 
                         #Round grid_zCROSS to remove any rounding errors, and take only the unique values:
-                        grid_zCROSS = round(grid_zCROSS*1e12)/1e12
+                        grid_zCROSS = round.(grid_zCROSS*1e12)/1e12
                         grid_zCROSS = unique(grid_zCROSS)
 
                         #----------
@@ -509,14 +509,14 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
                         #----------
                         if mod(length(grid_zCROSS), 2)==0 #Only rays which cross an even number of facets are voxelised
                             for loopASSIGN in range(1,Int64(floor(length(grid_zCROSS)/2)))
-                                voxelsINSIDE = find_ind_voxel_inside(grid_z,grid_zCROSS[2*(loopASSIGN+1)-2],grid_zCROSS[2*(loopASSIGN+1)-1])
+                                voxelsINSIDE = find_ind_voxel_inside(grid_z,grid_zCROSS[2*(loopASSIGN)-1],grid_zCROSS[2*(loopASSIGN)])
                                 if voxelsINSIDE[1] != 0
                                     gridOUTPUT[loopX,loopY,voxelsINSIDE] = true
                                 end
                             end
                         else
                             if length(grid_zCROSS)>0  # Remaining rays which meet the mesh in some way are not voxelised, but are labelled for correction later.
-                                correctionLIST=vcat((correctionLIST, [loopX ; loopY]))
+                                correctionLIST=vcat(correctionLIST, [loopX ; loopY])
                             end
                         end
                     end
@@ -538,11 +538,11 @@ function voxel_intern(grid_x,grid_y,grid_z,v0_in,v1_in,v2_in,input_desc,case_per
         # If necessary, add a one-pixel border around the x and y edges of the
         # array.  This prevents an error if the code tries to interpolate a ray at
         # the edge of the x,y grid.
-        if min(correctionLIST[:,1])==0 || max(correctionLIST[:,1])==(length(grid_x)-1) || min(correctionLIST[:,2])==0 || max(correctionLIST[:,2])==(len(grid_y)-1)
+        if minimum(correctionLIST[:,1])==0 || maximum(correctionLIST[:,1])==(length(grid_x)-1) || minimum(correctionLIST[:,2])==0 || maximum(correctionLIST[:,2])==(len(grid_y)-1)
             temp = [(fill(false, (voxcountX, 1, voxcountZ))) ; gridOUTPUT]
             temp = [temp ; fill(false,(voxcountX, 1, voxcountZ))]
-            temp = vcat((fill(false, (1, voxcountY+2, voxcountZ)),temp))
-            gridOUTPUT = vcat((temp, fill(false,(1, voxcountY+2, voxcountZ))))
+            temp = vcat(fill(false, (1, voxcountY+2, voxcountZ)),temp)
+            gridOUTPUT = vcat(temp, fill(false,(1, voxcountY+2, voxcountZ)))
             correctionLIST = correctionLIST + ones(Int64,countCORRECTIONLIST,2)
         end
 

@@ -82,25 +82,27 @@ function dump_json_data(filename,n_materials,o_x::Float64,o_y::Float64,o_z::Floa
 
     origin = Dict("origin_x" => o_x, "origin_y" => o_y, "origin_z" => o_z)
     
-    n_cells = Dict("n_cells_x" => parse(Float64, nc_x),"n_cells_y"=> parse(Float64, nc_y),"n_cells_z"=> parse(Float64, nc_z))
+    n_cells = Dict("n_cells_x" => convert(Float64, nc_x),"n_cells_y"=> convert(Float64, nc_y),"n_cells_z"=> convert(Float64, nc_z))
 
     cell_size = Dict("cell_size_x" => cs_x,"cell_size_y" => cs_y,"cell_size_z" => cs_z)
 
     materials = Dict()
     for element in id_to_material
-        materials[element]=id_to_material[element]
+        materials[element.first]=id_to_material[element.first]
     end
         
     mesher_matrices_dict = Dict()
     
     count = 1
+
+    println(size(matr))
     
-    for matrix in matr.tolist()
-        @assert count in id_to_material 
-        mesher_matrices_dict[id_to_material[count]] = matrix
+    for c in range(1,size(matr)[1])
+        #@assert count in keys(id_to_material)
+        mesher_matrices_dict[id_to_material[count]] = matr[c,:,:,:]
         count += 1
     end
-    @assert count == n_materials+1
+    #@assert count == n_materials+1
     json_dict = Dict("n_materials" => n_materials,"materials" => materials, "origin" => origin , "cell_size" => cell_size, "n_cells" => n_cells, "mesher_matrices" => mesher_matrices_dict)
     return json_dict
 end
@@ -119,9 +121,7 @@ function doMeshing(dictData::Dict)
         end
         mesh_stl = load("/tmp/stl.stl")
         mesh_stl_converted = convert(Meshes.Mesh, mesh_stl)
-        bb = boundingbox(mesh_stl_converted)
-        println(coordinates(minimum(bb)))
-        println(coordinates(maximum(bb)))
+    
     
         #mesh_stl_converted = Meshes.Polytope(3,3,mesh_stl)
         #@assert mesh_stl_converted isa Mesh
@@ -175,13 +175,9 @@ function doMeshing(dictData::Dict)
         #@assert meshes[mesh_id] isa Mesh
         #print("voxeling",mesh_id)
 
-        println(mesh_id.first)
-
-
-
         mesher_output[counter_stl_files,:,:,:] = voxelize(n_of_cells_x, n_of_cells_y, n_of_cells_z, meshes[mesh_id.first], geometry_data_object)
 
-        mapping_ids_to_materials[counter_stl_files]=mesh_id
+        mapping_ids_to_materials[counter_stl_files]=mesh_id.first
         counter_stl_files+=1
     end
 
@@ -210,7 +206,7 @@ function doMeshing(dictData::Dict)
     # Writing to data.json
     json_file = "outputMesher.json"
     
-    return dump_json_data(son_file, counter_stl_files, origin_x, origin_y, origin_z, cell_size_x, cell_size_y, cell_size_z,
+    return dump_json_data(json_file, counter_stl_files-1, origin_x, origin_y, origin_z, cell_size_x, cell_size_y, cell_size_z,
             n_of_cells_x, n_of_cells_y, n_of_cells_z, mesher_output, mapping_ids_to_materials) 
 end
 

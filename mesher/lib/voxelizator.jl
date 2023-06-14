@@ -43,6 +43,7 @@ function merge_the_3_grids(voxcountX, voxcountY, voxcountZ,gridOUTPUT1,gridOUTPU
             end
         end
     end
+    return gridOUTPUT
 end
 
 function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh, geometry_desc::Dict)
@@ -72,7 +73,6 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     else
         #If gridX is a single integer (rather than a vector) then automatically create the list of x coordinates
         voxwidth  = (meshXmax-meshXmin)/(cells_on_x+1/2)
-        println(meshXmin+voxwidth/2, meshXmax-voxwidth/2, voxwidth)
         gridCOx   = range(meshXmin+voxwidth/2, meshXmax-voxwidth/2, step=voxwidth)
     end
     
@@ -149,16 +149,49 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     voxcountY = length(gridCOy)
     voxcountZ = length(gridCOz)
 
-    gridOUTPUT1 = voxel_intern(gridCOy, gridCOz, gridCOx, meshXYZ.v0, meshXYZ.v1, meshXYZ.v2, geometry_desc, 0)
-    gridOUTPUT2 = voxel_intern(gridCOz, gridCOx, gridCOy, meshXYZ.v0, meshXYZ.v1, meshXYZ.v2, geometry_desc, 1)
-    gridOUTPUT3 = voxel_intern(gridCOx, gridCOy, gridCOz, meshXYZ.v0, meshXYZ.v1, meshXYZ.v2, geometry_desc, 2)
+    v0 = zeros(convert(Int64, length(vertices(meshXYZ))/3), 3)
+    v1 = zeros(convert(Int64, length(vertices(meshXYZ))/3), 3)
+    v2 = zeros(convert(Int64, length(vertices(meshXYZ))/3), 3)
+
+    i = 1
+    j = 1
+    k = 1
+
+    for (index, p) in enumerate(vertices(meshXYZ))
+        if (mod(index, 3) == 1)
+            v0[i,1] = coordinates(p)[1]
+            v0[i,2] = coordinates(p)[2]
+            v0[i,3] = coordinates(p)[3]
+            i = i + 1
+        end
+        if (mod(index, 3) == 2)
+            v1[j,1] = coordinates(p)[1]
+            v1[j,2] = coordinates(p)[2]
+            v1[j,3] = coordinates(p)[3]
+            j = j + 1
+        end
+        if (mod(index, 3) == 0)
+            v2[k,1] = coordinates(p)[1]
+            v2[k,2] = coordinates(p)[2]
+            v2[k,3] = coordinates(p)[3]
+            k = k + 1
+        end
+        #println(coordinates(p))
+    end
+
+
+    #println(vertices(meshXYZ)[1:120])
+
+    gridOUTPUT1 = voxel_intern(gridCOy, gridCOz, gridCOx, v0, v1, v2, geometry_desc, 0)
+    gridOUTPUT2 = voxel_intern(gridCOz, gridCOx, gridCOy, v0, v1, v2, geometry_desc, 1)
+    gridOUTPUT3 = voxel_intern(gridCOx, gridCOy, gridCOz, v0, v1, v2, geometry_desc, 2)
 
     #from scipy.io import savemat
     #mdic = {"gridOUTPUT1": gridOUTPUT1, "gridOUTPUT2": gridOUTPUT2, "gridOUTPUT3": gridOUTPUT3}
     #savemat("python_grids.mat", mdic)
 
     gridOUTPUT = fill(false, (voxcountX, voxcountY, voxcountZ))
-    merge_the_3_grids(voxcountX, voxcountY, voxcountZ, gridOUTPUT1, gridOUTPUT2, gridOUTPUT3,gridOUTPUT)
+    gridOUTPUT = merge_the_3_grids(voxcountX, voxcountY, voxcountZ, gridOUTPUT1, gridOUTPUT2, gridOUTPUT3,gridOUTPUT)
 
     # %======================================================
     # % RETURN THE OUTPUT GRID TO THE SIZE REQUIRED BY THE USER (IF IT WAS CHANGED EARLIER)
@@ -168,39 +201,39 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     if var_check == 1
         #@assert gridcheckX in [1,2,3]
         if gridcheckX == 1
-            gridOUTPUT=gridOUTPUT[2:voxcountX+1,:,:]
-            gridCOx    = gridCOx[2:voxcountX+1]
+            gridOUTPUT=gridOUTPUT[2:voxcountX,:,:]
+            gridCOx    = gridCOx[2:voxcountX]
         elseif gridcheckX == 2
-            gridOUTPUT = gridOUTPUT[1:voxcountX, :, :]
-            gridCOx = gridCOx[1:voxcountX]
+            gridOUTPUT = gridOUTPUT[1:voxcountX-1, :, :]
+            gridCOx = gridCOx[1:voxcountX-1]
         else
-            gridOUTPUT = gridOUTPUT[2:voxcountX, :, :]
-            gridCOx = gridCOx[2:voxcountX]
+            gridOUTPUT = gridOUTPUT[2:voxcountX-1, :, :]
+            gridCOx = gridCOx[2:voxcountX-1]
         end
     elseif var_check == 2
         #@assert gridcheckY in [1,2,3]
             if gridcheckY == 1
-                gridOUTPUT = gridOUTPUT[:,2:voxcountY+1, :]
-                gridCOy = gridCOy[2:voxcountY+1]
-            elseif gridcheckY == 2
-                gridOUTPUT = gridOUTPUT[:, 1:voxcountY, :]
-                gridCOy = gridCOy[1:voxcountY]
-            else
-                gridOUTPUT = gridOUTPUT[:, 2:voxcountY, :]
+                gridOUTPUT = gridOUTPUT[:,2:voxcountY, :]
                 gridCOy = gridCOy[2:voxcountY]
+            elseif gridcheckY == 2
+                gridOUTPUT = gridOUTPUT[:, 1:voxcountY-1, :]
+                gridCOy = gridCOy[1:voxcountY-1]
+            else
+                gridOUTPUT = gridOUTPUT[:, 2:voxcountY-1, :]
+                gridCOy = gridCOy[2:voxcountY-1]
             end
     else
         #@assert var_check == 3
         #@assert gridcheckZ in [1,2,3]
         if gridcheckZ == 1
-            gridOUTPUT = gridOUTPUT[:, :, 2:voxcountZ+1]
-            gridCOz = gridCOz[2:voxcountZ+1]
-        elseif gridcheckZ == 2
-            gridOUTPUT = gridOUTPUT[:, :, 1:voxcountZ]
-            gridCOz = gridCOz[1:voxcountZ]
-        else
             gridOUTPUT = gridOUTPUT[:, :, 2:voxcountZ]
             gridCOz = gridCOz[2:voxcountZ]
+        elseif gridcheckZ == 2
+            gridOUTPUT = gridOUTPUT[:, :, 1:voxcountZ-1]
+            gridCOz = gridCOz[1:voxcountZ-1]
+        else
+            gridOUTPUT = gridOUTPUT[:, :, 2:voxcountZ-1]
+            gridCOz = gridCOz[2:voxcountZ-1]
         end
     end
 
