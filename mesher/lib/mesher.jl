@@ -8,7 +8,7 @@ using MeshBridge
 function find_mins_maxs(mesh_object::Mesh)
     bb = boundingbox(mesh_object)
     #@assert mesh_object isa Mesh
-    minx =  coordinates(minimum(bb))[1]
+    minx = coordinates(minimum(bb))[1]
     maxx = coordinates(maximum(bb))[1]
     miny = coordinates(minimum(bb))[2]
     maxy = coordinates(maximum(bb))[2]
@@ -92,16 +92,26 @@ function dump_json_data(filename,n_materials,o_x::Float64,o_y::Float64,o_z::Floa
     end
         
     mesher_matrices_dict = Dict()
-    
-    count = 1
 
-    println(size(matr))
     
-    for c in range(1,size(matr)[1])
-        #@assert count in keys(id_to_material)
-        mesher_matrices_dict[id_to_material[count]] = matr[c,:,:,:]
-        count += 1
+    for c in range(1, n_materials)
+        x = []
+        for i in range(1, nc_x)
+            push!(x, slicematrix(matr[1,i,:,:]))
+        end
+        mesher_matrices_dict[id_to_material[c]] = x
+        
+        # for matrix in eachslice(matr2, dims=1)
+        #     #@assert count in keys(id_to_material)
+        #     println("->")
+        #     display(matrix)
+        #     
+        #     #display(mesher_matrices_dict[id_to_material[count]])
+        #     #count += 1
+        # end
     end
+
+    
     #@assert count == n_materials+1
     json_dict = Dict("n_materials" => n_materials,"materials" => materials, "origin" => origin , "cell_size" => cell_size, "n_cells" => n_cells, "mesher_matrices" => mesher_matrices_dict)
     return json_dict
@@ -208,5 +218,14 @@ function doMeshing(dictData::Dict)
     
     return dump_json_data(json_file, counter_stl_files-1, origin_x, origin_y, origin_z, cell_size_x, cell_size_y, cell_size_z,
             n_of_cells_x, n_of_cells_y, n_of_cells_z, mesher_output, mapping_ids_to_materials) 
+end
+
+function slicematrix(A::AbstractMatrix{T}) where T
+    m, n = size(A)
+    B = Vector{T}[Vector{T}(undef, n) for _ in 1:m]
+    for i in 1:m
+        B[i] .= A[i, :]
+    end
+    return B
 end
 

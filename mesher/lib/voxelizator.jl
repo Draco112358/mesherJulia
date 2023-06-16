@@ -7,7 +7,7 @@ function solve_overlapping(n_cells_x,n_cells_y,n_cells_z,num_materials,id_mat_ke
             for c3 in range(1, n_cells_z)
                 for k in range(1, num_materials)
                     if output_meshing[k,c1, c2, c3] == true
-                        for k2 in range(num_materials)
+                        for k2 in range(1, num_materials)
                             if output_meshing[k2,c1, c2, c3] == true && k!=k2
                                 if k in id_mat_keep
                                     output_meshing[k2, c1, c2, c3] = false
@@ -157,6 +157,8 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     j = 1
     k = 1
 
+    #println(vertices(meshXYZ))
+
     for (index, p) in enumerate(vertices(meshXYZ))
         if (mod(index, 3) == 1)
             v0[i,1] = coordinates(p)[1]
@@ -178,9 +180,7 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
         end
         #println(coordinates(p))
     end
-
-
-    #println(vertices(meshXYZ)[1:120])
+    
 
     gridOUTPUT1 = voxel_intern(gridCOy, gridCOz, gridCOx, v0, v1, v2, geometry_desc, 0)
     gridOUTPUT2 = voxel_intern(gridCOz, gridCOx, gridCOy, v0, v1, v2, geometry_desc, 1)
