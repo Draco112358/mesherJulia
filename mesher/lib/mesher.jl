@@ -97,7 +97,7 @@ function dump_json_data(filename,n_materials,o_x::Float64,o_y::Float64,o_z::Floa
     for c in range(1, n_materials)
         x = []
         for i in range(1, nc_x)
-            push!(x, slicematrix(matr[1,i,:,:]))
+            push!(x, slicematrix(matr[c,i,:,:]))
         end
         mesher_matrices_dict[id_to_material[c]] = x
         
@@ -138,7 +138,6 @@ function doMeshing(dictData::Dict)
         meshes[mesh_id] = mesh_stl_converted
         Base.Filesystem.rm("/tmp/stl.stl", force=true)
     end
-
     
     geometry_x_bound, geometry_y_bound, geometry_z_bound, geometry_data_object = find_box_dimensions(meshes)
     
@@ -155,9 +154,10 @@ function doMeshing(dictData::Dict)
 
     #print("QUANTA:",quantum_x, quantum_y, quantum_z)
 
-    n_of_cells_x = ceil(Int64, geometry_x_bound / quantum_x)
-    n_of_cells_y = ceil(Int64, geometry_y_bound / quantum_y)
-    n_of_cells_z = ceil(Int64, geometry_z_bound / quantum_z)
+    n_of_cells_x = ceil(Int, geometry_x_bound / quantum_x)
+    n_of_cells_y = ceil(Int, geometry_y_bound / quantum_y)
+    n_of_cells_z = ceil(Int, geometry_z_bound / quantum_z)
+
     
     #print("GRID:",n_of_cells_x, n_of_cells_y, n_of_cells_z)
     
@@ -183,8 +183,7 @@ function doMeshing(dictData::Dict)
     for mesh_id in meshes
         
         #@assert meshes[mesh_id] isa Mesh
-        #print("voxeling",mesh_id)
-
+        print(meshes[mesh_id.first])
         mesher_output[counter_stl_files,:,:,:] = voxelize(n_of_cells_x, n_of_cells_y, n_of_cells_z, meshes[mesh_id.first], geometry_data_object)
 
         mapping_ids_to_materials[counter_stl_files]=mesh_id.first

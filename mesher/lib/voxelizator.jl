@@ -73,16 +73,26 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     else
         #If gridX is a single integer (rather than a vector) then automatically create the list of x coordinates
         voxwidth  = (meshXmax-meshXmin)/(cells_on_x+1/2)
-        gridCOx   = range(meshXmin+voxwidth/2, meshXmax-voxwidth/2, step=voxwidth)
+        gridCOx = [meshXmin+voxwidth/2]
+        for (index, value) in enumerate(range(meshXmin+voxwidth/2, meshXmax-voxwidth/2, step=voxwidth))
+            if (index != 1)
+                push!(gridCOx, gridCOx[index-1]+voxwidth)
+            end
+        end
     end
     
-    if cells_on_y==12
+    if cells_on_y==1
         #If gridX is a single integer (rather than a vector) and is equal to 1
         gridCOy   = (meshYmin+meshYmax)/2
     else
         #If gridX is a single integer (rather than a vector) then automatically create the list of x coordinates
         voxwidth  = (meshYmax-meshYmin)/(cells_on_y+1/2)
-        gridCOy   = range(meshYmin+voxwidth/2, meshYmax-voxwidth/2, step=voxwidth)
+        gridCOy = [meshYmin+voxwidth/2]
+        for (index, value) in enumerate(range(meshYmin+voxwidth/2, meshYmax-voxwidth/2, step=voxwidth))
+            if (index != 1)
+                push!(gridCOy, gridCOy[index-1]+voxwidth)
+            end
+        end
     end
     
     if cells_on_z==1
@@ -91,7 +101,12 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     else
         #If gridX is a single integer (rather than a vector) then automatically create the list of x coordinates
         voxwidth  = (meshZmax-meshZmin)/(cells_on_z+1/2)
-        gridCOz   = range(meshZmin+voxwidth/2, meshZmax-voxwidth/2, step=voxwidth)
+        gridCOz = [meshZmin+voxwidth/2]
+        for (index, value) in enumerate(range(meshZmin+voxwidth/2, meshZmax-voxwidth/2, step=voxwidth))
+            if (index != 1)
+                push!(gridCOz, gridCOz[index-1]+voxwidth)
+            end
+        end
     end
 
     #@assert minimum(gridCOx)>meshXmin
@@ -100,45 +115,42 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
     if (minimum(gridCOx)>meshXmin || maximum(gridCOx)<meshXmax)
         var_check = 1
         gridcheckX = 0
-        if (minimum(gridCOx)>meshXmin)
-            gridCOx=[meshXmin ; gridCOx]
-            gridcheckX = gridcheckX+1
+        if minimum(gridCOx)>meshXmin
+            gridCOx=vcat(meshXmin, gridCOx)
+            gridcheckX += 1
         end
-        if (maximum(gridCOx)<meshXmax)
-            gridCOx = [gridCOx ; meshXmax]
-            gridcheckX = gridcheckX+2
+        if maximum(gridCOx)<meshXmax
+            gridCOx = vcat(gridCOx,meshXmax)
+            gridcheckX += 2
         end
     else
         if (minimum(gridCOy)>meshYmin || maximum(gridCOy)<meshYmax)
             var_check = 2
             gridcheckY = 0
             if minimum(gridCOy)>meshYmin
-                gridCOy = [meshYmin ; gridCOy]
-                gridcheckY = gridcheckY+1
+                gridCOy = vcat(meshYmin, gridCOy)
+                gridcheckY += 1
             end
             if maximum(gridCOy)<meshYmax
-                gridCOy =[gridCOy ; meshYmax]
-                gridcheckY = gridcheckY+2
+                gridCOy = vcat(gridCOy, meshYmax)
+                gridcheckY += 2
             end
         else
             if (minimum(gridCOz)>meshZmin || maximum(gridCOz)<meshZmax)
                 var_check = 3
                 gridcheckZ = 0
-                if (minimum(gridCOz)>meshZmin)
-                    gridCOz = [meshZmin ; gridCOz]
-                    gridcheckZ = gridcheckZ+1
+                if minimum(gridCOz)>meshZmin
+                    gridCOz = vcat(meshZmin, gridCOz)
+                    gridcheckZ += 1
                 end
-                if (maximum(gridCOz)<meshZmax)
-                    gridCOz = [gridCOz ; meshZmax]
-                    gridcheckZ = gridcheckZ+2
+                if maximum(gridCOz)<meshZmax
+                    gridCOz = vcat(gridCOz, meshZmax)
+                    gridcheckZ += 2
                 end
             end
         end
     end
-
-    #print(gridCOx)
-    #print(gridCOy)
-    #print(gridCOz)
+    
 
     # %======================================================
     # % VOXELISE USING THE USER DEFINED RAY DIRECTION(S)
@@ -180,7 +192,10 @@ function voxelize(cells_on_x::Int,cells_on_y::Int,cells_on_z::Int,meshXYZ::Mesh,
         end
         #println(coordinates(p))
     end
-    
+
+    # display(v0)
+    # display(v1)
+    # display(v2)
 
     gridOUTPUT1 = voxel_intern(gridCOy, gridCOz, gridCOx, v0, v1, v2, geometry_desc, 0)
     gridOUTPUT2 = voxel_intern(gridCOz, gridCOx, gridCOy, v0, v1, v2, geometry_desc, 1)
